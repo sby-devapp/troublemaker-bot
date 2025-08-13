@@ -60,5 +60,5 @@ class User(Model):
         self.username = row["username"]
         self.first_name = row["first_name"]
         self.last_name = row["last_name"]
-        self.age = row.get("age", 99)
-        self.gender = row.get("gender", None)
+        self.age = row["age"] if "age" in row else 99
+        self.gender = row["gender"]

@@ -74,7 +74,9 @@ class Group(Model):
         cursor = self.db_manager.db.cursor()
         cursor.execute(query, (self.id,))
         rows = cursor.fetchall()
+        self._members = []
         for row in rows:
             user = User()
             user.load_object_from_row(row)
-        return self._members.append(user)
+            self._members.append(user)
+        return self._members
