@@ -30,6 +30,8 @@ def menu():
         elif i == 1:
             DBManager.connect()
             DBManager.execute_sql_file("database/sql/schema.sql")
+            print("Database schema created successfully.")
+            DBManager.close()
         elif i == 2:
             DBManager.connect()
             file_name = input("Write the file name (e.g., filename.sql): ")

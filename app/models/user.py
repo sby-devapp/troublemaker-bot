@@ -5,12 +5,22 @@ from app.models.database.model import Model
 class User(Model):
     table_name = "users"
 
-    def __init__(self, id=None, username=None, first_name=None, last_name=None):
+    def __init__(
+        self,
+        id=None,
+        username=None,
+        first_name=None,
+        last_name=None,
+        age=99,
+        gender=None,
+    ):
         super().__init__()
         self.id = id
         self.username = username
         self.first_name = first_name
         self.last_name = last_name
+        self.age = age
+        self.gender = gender
 
     def _insert(self):
         query = f"""
@@ -43,30 +53,12 @@ class User(Model):
             full_name = f"@{self.username}"
         return full_name
 
-    def load_from_row(self, row):
+    def load_object_from_row(self, row):
         if not row:
             return None
-        self.id = row[0]
-        self.username = row[1]
-        self.first_name = row[2]
-        self.last_name = row[3]
-
-    def get_random_user_except(self, user_id: int):
-        """
-        Get a random user except the given user_id.
-        """
-        if user_id is None:
-            raise ValueError("user_id must be provided")
-        query = f"""
-        SELECT *
-        FROM {self.table_name}
-        WHERE id != ?
-        ORDER BY RANDOM()
-        LIMIT 1
-        """
-        cursor = self.db_manager.execute(query, (user_id,))
-        row = cursor.fetchone()
-        if row:
-            self.load_from_row(row)
-            return self
-        return None
+        self.id = row["id"]
+        self.username = row["username"]
+        self.first_name = row["first_name"]
+        self.last_name = row["last_name"]
+        self.age = row.get("age", 99)
+        self.gender = row.get("gender", None)

@@ -3,10 +3,8 @@ from telegram.ext import ContextTypes, CommandHandler
 
 from app.services.chat_service import ChatService
 from app.services.user_service import UserService
-from app.models.question import Question
 import random
 
-from app.views.poll_view import PollView
 
 # Make sure to import or define ChatService and UserService
 # from app.services.chat_service import ChatService
@@ -21,6 +19,7 @@ class Controller:
 
     def setup(self):
         print("Setting up the controller")
+        pass
 
     def get_chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -55,19 +54,3 @@ class Controller:
             return False
         member = await context.bot.get_chat_member(chat.id, user.id)
         return member.status in ["administrator", "creator"]
-
-    def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Command handler for /start command.
-        """
-        user = self.get_user(update, context)
-        chat = self.get_chat(update, context)
-        welcome_message = f"Welcome {user.full_name()} to the chat {chat.title}!"
-        context.bot.send_message(chat_id=chat.id, text=welcome_message)
-
-    def setup_handlers(self):
-        """
-        Sets up command handlers for the application.
-        """
-        self.application.add_handler(CommandHandler("start", self.start))
-        # Add more handlers as needed
