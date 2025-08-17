@@ -63,7 +63,7 @@ class DBManager:
         if cls.is_connected():
             cls.connect()
             raise Exception("Database connection is not established.")
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="utf-8") as file:  # <-- add encoding
             sql_script = file.read()
         cursor = cls.db.cursor()
         cursor.executescript(sql_script)

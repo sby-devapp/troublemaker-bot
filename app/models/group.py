@@ -1,5 +1,6 @@
 from app.models.database.model import Model
 from app.models.user import User
+import random
 
 
 class Group(Model):
@@ -80,3 +81,7 @@ class Group(Model):
             user.load_object_from_row(row)
             self._members.append(user)
         return self._members
+
+    def propose_to(self, user: User) -> User:
+        """Propose a user from this group to the user who given in the param ."""
+        return user.link_me_with_from_group(self)
