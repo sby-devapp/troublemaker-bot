@@ -19,12 +19,23 @@ class DBManager:
     db_file_name = f"database"
 
     @classmethod
+    def initialize(cls):
+        """
+        Initialize the database connection.
+        If db_file_name is provided, it will use that to connect to the database.
+        """
+        cls.execute_sql_file("database/sql/schema.sql")
+        cls.execute_sql_file("database/sql/data.proposal_lines.sql")
+        cls.execute_sql_file("database/sql/data.gossip_lines.sql")
+
+    @classmethod
     def connect(cls, db_file_name=None):
 
         if db_file_name:
             import sqlite3
 
             cls.db_file_name = db_file_name
+
             db_path = cls.db_location + cls.db_file_name + ".db"
             cls.db = sqlite3.connect(db_path)
             cls.db.row_factory = sqlite3.Row
@@ -33,6 +44,7 @@ class DBManager:
         if cls.db is None:
             import sqlite3
 
+            db_path = cls.db_location + cls.db_file_name + ".db"
             cls.db = sqlite3.connect(db_path)
             cls.db.row_factory = sqlite3.Row
             print(f"Connecting to database at {db_path}")

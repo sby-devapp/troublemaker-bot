@@ -3,7 +3,7 @@ from app.models.chat import Chat
 
 class ChatService:
     def __init__(self):
-        print("Chat service")
+        print("Chat service initialized")
 
     def save(self, chat) -> Chat:
         chat_db = Chat(

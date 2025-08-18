@@ -1,11 +1,11 @@
 PRAGMA encoding = "UTF-8";
 
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS chats;
-DROP TABLE IF EXISTS groups;
-DROP TABLE IF EXISTS group_users;
-DROP TABLE IF EXISTS proposal_lines;
-DROP TABLE IF EXISTS gossip_lines;
+-- DROP TABLE IF EXISTS users;
+-- DROP TABLE IF EXISTS chats;
+-- DROP TABLE IF EXISTS groups;
+-- DROP TABLE IF EXISTS group_users;
+-- DROP TABLE IF EXISTS proposal_lines;
+-- ROP TABLE IF EXISTS gossip_lines;
 -- DROP TABLE IF EXISTS actions;
 -- DROP TABLE IF EXISTS propositions;
 

@@ -6,12 +6,15 @@ from app.models.user import User
 
 
 class GroupService:
-    def __init__(self, group_or_id):
+    def __init__(self, group_or_id=None):
         """Initialize the GroupService with a group or group ID."""
+        print("Group service initialized")
         if isinstance(group_or_id, Group):
             self.group = group_or_id
-        else:
+        elif isinstance(group_or_id, int):
             self.group = Group(id=group_or_id).get() if group_or_id else None
+        else:
+            self.group = None
 
     def linked_user(self, user: User) -> User:
         if not self.group:
@@ -21,6 +24,12 @@ class GroupService:
             raise ValueError("No linked user found in the group")
 
         return linked_user
+
+    def is_user_in_group(self, user: User) -> bool:
+        """Check if a user is registered in the group."""
+        if not self.group:
+            raise ValueError("Group not found")
+        return user.am_in_group(self.group)
 
     def register(self, user: User) -> User:
         """Register a user in the group."""

@@ -126,3 +126,24 @@ class User(Model):
         else:
             print(f"{self.full_name()} is not a member of group {group.groupname}")
             return None
+
+    @classmethod
+    def get_by_username(cls, username: str) -> "User":
+        if username.startswith("@"):
+            username = username[1:]
+
+        query = """
+        SELECT *
+        FROM users
+        WHERE username = ?
+        Limit 1
+        """
+        cursor = cls.db_manager.db.cursor()
+        cursor.execute(query, (username,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            user = cls()
+            user.load_object_from_row(row)
+            return user
+        return None
