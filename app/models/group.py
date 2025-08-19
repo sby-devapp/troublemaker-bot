@@ -58,7 +58,7 @@ class Group(Model):
         """
         cursor = self.db_manager.db.cursor()
         cursor.execute(query, (self.id, member.id))
-        if self.is_user_exist(member):
+        if self.has_member(member):
             self._members.append(member)  # Add member to the local list
 
     def members(self):
@@ -88,7 +88,7 @@ class Group(Model):
         """Propose a user from this group to the user who given in the param ."""
         return user.link_me_with_from_group(self)
 
-    def is_user_exist(self, user: User) -> bool:
+    def has_member(self, user: User) -> bool:
         """Check if a user is already a member of the group."""
         """ Check is (group.id,user.id) exist in group_users table """
         query = f"""

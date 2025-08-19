@@ -41,19 +41,22 @@ class User(Model):
         return self
 
     def _update(self):
+        fields = ["username = ?", "first_name = ?", "last_name = ?"]
+        values = [self.username, self.first_name, self.last_name]
+
+        if self.gender is not None:
+            fields.append("gender = ?")
+            values.append(self.gender)
+        if self.age is not None:
+            fields.append("age = ?")
+            values.append(self.age)
+
         query = f"""
         UPDATE {self.table_name}
-        SET username = ?, first_name = ?, last_name = ?, gender = ?, age = ?
+        SET {', '.join(fields)}
         WHERE id = ?
         """
-        values = (
-            self.username,
-            self.first_name,
-            self.last_name,
-            self.gender,
-            self.age,
-            self.id,
-        )
+        values.append(self.id)
         self.db_manager.execute(query, values)
         return self
 
@@ -78,7 +81,7 @@ class User(Model):
         self.age = row["age"] if "age" in row else 99
         self.gender = row["gender"]
 
-    def am_in_group(self, group) -> bool:
+    def belong_to(self, group) -> bool:
         query = """
         SELECT 1
         FROM group_users
@@ -92,10 +95,12 @@ class User(Model):
 
     def link_me_with_from_group(self, group) -> "User":
 
-        if self.am_in_group(group):
+        if group.has_member(self):
             if len(group.members()) > 1:
                 cursor = self.db_manager.db.cursor()
-                # print(f"{user.full_name()} with gender {user.gender}")
+                print(
+                    f"[link_me_with_from_group] {self.full_name()} with gender {self.gender}"
+                )
                 if self.gender is None:
                     query = """
                         SELECT u.*
@@ -128,20 +133,11 @@ class User(Model):
             return None
 
     @classmethod
-    def get_by_username(cls, username: str) -> "User":
-        if username.startswith("@"):
-            username = username[1:]
-
-        query = """
-        SELECT *
-        FROM users
-        WHERE username = ?
-        Limit 1
-        """
+    def get_by_username(cls, username):
+        query = f"SELECT * FROM {cls.table_name} WHERE username = ?"
         cursor = cls.db_manager.db.cursor()
         cursor.execute(query, (username,))
         row = cursor.fetchone()
-        cursor.close()
         if row:
             user = cls()
             user.load_object_from_row(row)

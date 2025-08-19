@@ -20,10 +20,19 @@ class UserController(Controller):
         """
         Command handler for /start command.
         """
+        if self.is_group(update, context):
+            await update.message.reply_text(
+                "This command can only be used in a private chat."
+            )
+            return
+
         user = self.get_user(update, context)
-        chat = self.get_chat(update, context)
-        welcome_message = f"Welcome {user.full_name} to the chat {chat.title}!"
-        await context.bot.send_message(chat_id=chat.id, text=welcome_message)
+        welcome_message = (
+            f"Welcome {user.full_name()}!\n"
+            ""
+            "You can set your gender using this command: /setgender [M|F]."
+        )
+        await update.message.reply_text(welcome_message)
 
     async def handle_setgender(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
@@ -36,17 +45,19 @@ class UserController(Controller):
             update.message.reply_text
 
         user = self.get_user(update, context)
+        print(f"[handle_setgender] {user.gender} for {user.full_name()}")
         gender_options = ["M", "F"]
         if (
             len(update.message.text.split()) == 2
             and update.message.text.split()[1].upper() in gender_options
         ):
             user.gender = update.message.text.split()[1].upper()
-            user.save()
-            update.message.reply_text(f"Gender set to {user.gender}")
+            user._update()
+            print(f"[handle_setgender] {user.gender} for {user.full_name()}")
+            await update.message.reply_text(f"Gender set to {user.gender}")
         else:
             await update.message.reply_text(
-                """something went wrong, please use :
+                """Something went wrong, please use :
                 /setgender M
                 or
                 /setgender F

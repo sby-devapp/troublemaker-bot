@@ -12,3 +12,9 @@ class UserService:
         user_db.first_name = user.first_name
         user_db.last_name = user.last_name
         return user_db.save()
+
+    def get_by_username(self, username: str) -> User:
+        """
+        Retrieve a user by their username.
+        """
+        return User.get_by_username(username)

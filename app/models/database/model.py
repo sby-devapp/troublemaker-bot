@@ -43,6 +43,7 @@ class Model:
 
     def save(self):
         if self.is_exists():
+            self.get()  # load data from DB then update it
             return self._update()
         else:
             return self._insert()
