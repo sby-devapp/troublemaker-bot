@@ -6,7 +6,7 @@ class UserService:
         print("User service initialized")
 
     def save(self, user) -> User:
-        user_db = User()
+        user_db = User(id=user.id).get()
         user_db.id = user.id
         user_db.username = user.username
         user_db.first_name = user.first_name
@@ -18,3 +18,9 @@ class UserService:
         Retrieve a user by their username.
         """
         return User.get_by_username(username)
+
+    def get_by_id(self, user_id: int) -> User:
+        """
+        Retrieve a user by their ID.
+        """
+        return User(id=user_id).get()

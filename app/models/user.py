@@ -12,7 +12,7 @@ class User(Model):
         username=None,
         first_name=None,
         last_name=None,
-        age=99,
+        age=None,
         gender=None,
     ):
         super().__init__()
@@ -24,17 +24,40 @@ class User(Model):
         self.gender = gender
 
     def _insert(self):
+        if self.id is None:
+            print("Error: User id is None. Cannot insert user without id.")
+            return None
+        fields = []
+        placeholders = []
+        values = []
+
+        fields.append("id")
+        placeholders.append("?")
+        values.append(self.id)
+        if self.username is not None:
+            fields.append("username")
+            placeholders.append("?")
+            values.append(self.username)
+        if self.first_name is not None:
+            fields.append("first_name")
+            placeholders.append("?")
+            values.append(self.first_name)
+        if self.last_name is not None:
+            fields.append("last_name")
+            placeholders.append("?")
+            values.append(self.last_name)
+        if self.gender is not None:
+            fields.append("gender")
+            placeholders.append("?")
+            values.append(self.gender)
+        if self.age is not None:
+            fields.append("age")
+            placeholders.append("?")
+            values.append(self.age)
+
         query = f"""
-        INSERT INTO {self.table_name} (id, username, first_name, last_name, gender, age) VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO {self.table_name} ({', '.join(fields)}) VALUES ({', '.join(placeholders)})
         """
-        values = (
-            self.id,
-            self.username,
-            self.first_name,
-            self.last_name,
-            self.gender,
-            self.age,
-        )
         cursor = self.db_manager.db.cursor()
         cursor.execute(query, values)
         cursor.close()
@@ -78,7 +101,7 @@ class User(Model):
         self.username = row["username"]
         self.first_name = row["first_name"]
         self.last_name = row["last_name"]
-        self.age = row["age"] if "age" in row else 99
+        self.age = row["age"]
         self.gender = row["gender"]
 
     def belong_to(self, group) -> bool:

@@ -43,12 +43,12 @@ class Model:
 
     def save(self):
         if self.is_exists():
-            self.get()  # load data from DB then update it
             return self._update()
         else:
             return self._insert()
 
     def get(self):
+        temp_id = self.id
         if not self.id:
             raise ValueError("ID must be set to get a record")
         query = f"""
@@ -60,6 +60,8 @@ class Model:
         cursor.execute(query, (self.id,))
         row = cursor.fetchone()
         self.load_object_from_row(row)
+        self.id = temp_id
+        cursor.close()
         return self
 
     def delete(self):

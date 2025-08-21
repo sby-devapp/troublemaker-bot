@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     first_name TEXT,
     last_name TEXT,
     gender TEXT CHECK(gender IS NULL OR gender IN ('M', 'F', NULL)),
-    age INTEGER DEFAULT 99,
+    age INTEGER DEFAULT NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
