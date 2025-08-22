@@ -44,9 +44,6 @@ class UserController(Controller):
                     CallbackQueryHandler(
                         self.handle_back_to_profile, pattern=r"^back_to_profile$"
                     ),
-                    CallbackQueryHandler(
-                        self.handle_close_profile, pattern=r"^close_profile$"
-                    ),
                 ],
                 self.SET_GENDER: [
                     CallbackQueryHandler(self.save_gender, pattern=r"^edit_gender_")
@@ -66,6 +63,16 @@ class UserController(Controller):
         if self.is_group(update, context):
             await update.message.reply_text(
                 "This command can only be used in a private chat."
+            )
+            bot_username = context.bot.username
+            # Fixed: Removed extra space in URL
+            deep_link = f"https://t.me/{bot_username}?start=profile"
+            keyboard = [[InlineKeyboardButton("Open in Private", url=deep_link)]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await update.message.reply_text(
+                "This command can only be used in a private chat.\n"
+                "Click the button below to open your profile.",
+                reply_markup=reply_markup,
             )
             return
 
@@ -116,7 +123,7 @@ class UserController(Controller):
                     "⚧ Set Gender", callback_data=f"set_gender_{user.id}"
                 ),
             ],
-            [InlineKeyboardButton("❌ Close", callback_data="close_profile")],
+            [InlineKeyboardButton("❌ Close", callback_data=f"close_profile")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -127,9 +134,15 @@ class UserController(Controller):
                     text=profile_message, reply_markup=reply_markup, parse_mode="HTML"
                 )
             else:
-                await update.message.reply_text(
+                last_message = await update.message.reply_text(
                     text=profile_message, reply_markup=reply_markup, parse_mode="HTML"
                 )
+                if context.user_data.get("message_id"):
+                    await context.bot.delete_message(
+                        chat_id=update.message.chat_id,
+                        message_id=context.user_data.get("message_id"),
+                    )
+                context.user_data["message_id"] = last_message.message_id
         except Exception:
             # Fallback if text didn't change or message is too old
             await update.message.reply_text(
@@ -141,15 +154,14 @@ class UserController(Controller):
     async def set_age_prompt(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Prompt user to enter age with Back and Close buttons."""
         query = update.callback_query
-        await query.answer("Enter your age (16–120)")
+        await query.answer("Enter your age between 16 and 120.")
 
         keyboard = [
             [
                 InlineKeyboardButton(
                     "🔙 Back to Profile", callback_data="back_to_profile"
                 )
-            ],
-            [InlineKeyboardButton("❌ Close", callback_data="close_profile")],
+            ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -171,11 +183,12 @@ class UserController(Controller):
             user.age = age
             user._update()
             await update.message.reply_text(f"✅ Age set to {age}.")
+            return await self.show_profile(update, context)
         except ValueError:
-            await update.message.reply_text("❌ Please enter a valid number.")
+            await update.message.reply_text(
+                "❌ Please enter a valid number between 16 and 120."
+            )
             return self.SET_AGE
-
-        return await self.show_profile(update, context)
 
     async def set_gender_prompt(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
@@ -193,12 +206,7 @@ class UserController(Controller):
                 InlineKeyboardButton(
                     "🚺 Female", callback_data=f"edit_gender_F_{user_id}"
                 ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "🔙 Back to Profile", callback_data="back_to_profile"
-                )
-            ],
+            ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(
