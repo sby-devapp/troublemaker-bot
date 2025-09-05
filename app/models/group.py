@@ -24,6 +24,7 @@ class Group(Model):
                 self.groupname,
             ),
         )
+        cursor.close()
         return self
 
     def _update(self):
@@ -40,6 +41,7 @@ class Group(Model):
                 self.id,
             ),
         )
+        cursor.close()
         return self
 
     def load_object_from_row(self, row):
@@ -58,6 +60,7 @@ class Group(Model):
         """
         cursor = self.db_manager.db.cursor()
         cursor.execute(query, (self.id, member.id))
+        cursor.close()
         if self.has_member(member):
             self._members.append(member)  # Add member to the local list
 
@@ -82,6 +85,7 @@ class Group(Model):
             user = User()
             user.load_object_from_row(row)
             self._members.append(user)
+        cursor.close()
         return self._members
 
     def propose_to(self, user: User) -> User:
@@ -97,4 +101,58 @@ class Group(Model):
         """
         cursor = self.db_manager.db.cursor()
         cursor.execute(query, (self.id, user.id))
-        return cursor.fetchone() is not None
+        result = cursor.fetchone() is not None
+        cursor.close()
+        return result
+
+    def count_members(self) -> int:
+        """Return the number of members in the group."""
+        query = f"""
+        SELECT COUNT(*) as member_count FROM group_users
+        WHERE group_id = ?
+        """
+        cursor = self.db_manager.db.cursor()
+        cursor.execute(query, (self.id,))
+        row = cursor.fetchone()
+        cursor.close()
+        return row["member_count"] if row else 0
+
+    def participate_to_game(self, user: "User", key: bool):
+        if not self.has_member(user):
+            self.add_member(user)
+        if key == True:
+            anwser = "y"
+        else:
+            anwser = "n"
+        query = f"""
+        UPDATE group_users SET is_participant = '{anwser}'
+        WHERE group_id =? AND user_id =?
+        """
+        cursor = self.db_manager.db.cursor()
+        cursor.execute(query, (self.id, user.id))
+        cursor.close()
+        return True
+
+    def is_participant(self, user: "User") -> bool:
+        """
+        Check if the given user is a participant in this group.
+    
+        Returns True if the user is a participant ('y'), False otherwise.
+        Returns False if the user is not found in the group.
+        """
+        query = """
+        SELECT is_participant
+        FROM group_users
+        WHERE group_id = ? AND user_id = ?
+        """
+        cursor = self.db_manager.db.cursor()
+        try:
+            cursor.execute(query, (self.id, user.id))
+            result = cursor.fetchone()
+            # If no row found, return False
+            if result is None:
+                return False
+            # Assuming is_participant is stored as 'y' for yes, anything else for no
+            return result[0] == 'y' or result[0] == 'Y'
+        finally:
+            cursor.close() 

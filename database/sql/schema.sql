@@ -44,9 +44,11 @@ CREATE TABLE IF NOT EXISTS groups (
 CREATE TABLE IF NOT EXISTS group_users (
     group_id INTEGER,
     user_id INTEGER,
-    
-    FOREIGN KEY (group_id) REFERENCES chats(id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
+    is_participant TEXT DEFAULT 'y',  -- 'y' = yes, 'n' = no
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES chats(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE (group_id, user_id)
 );
 

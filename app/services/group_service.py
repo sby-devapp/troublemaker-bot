@@ -69,3 +69,16 @@ class GroupService:
             return user, proposed_user, message
         else:
             return user, user, "No crush found for you in this group."
+
+    def participate_to_game(self, user: User, key: bool) -> User:
+        """Participate/logout to the game in the group."""
+        if not self.group:
+            raise ValueError("Group not found")
+        self.group.participate_to_game(user, key)
+        return user
+
+
+    def is_participant(self, user: "User"):
+        if not self.group:
+            raise ValueError("Group not found")
+        return self.group.is_participant(user)

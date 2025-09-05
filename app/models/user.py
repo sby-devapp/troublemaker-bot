@@ -118,42 +118,28 @@ class User(Model):
 
     def link_me_with_from_group(self, group) -> "User":
 
-        if group.has_member(self):
-            if len(group.members()) > 1:
-                cursor = self.db_manager.db.cursor()
-                print(
-                    f"[link_me_with_from_group] {self.full_name()} with gender {self.gender}"
-                )
-                if self.gender is None:
-                    query = """
-                        SELECT u.*
-                        FROM users u
-                        JOIN group_users gu ON u.id = gu.user_id
-                        WHERE gu.group_id = ? AND u.id != ?
-                    """
-                    cursor.execute(query, (group.id, self.id))
-                else:
-                    query = """
-                        SELECT u.*
-                        FROM users u
-                        JOIN group_users gu ON u.id = gu.user_id
-                        WHERE gu.group_id = ? AND u.id != ? AND u.gender != ?
-                        """
-                    cursor.execute(query, (group.id, self.id, self.gender))
-                candidates = cursor.fetchall()
-                selected_row = random.choice(candidates)
-                proposed_user = User()
-                proposed_user.load_object_from_row(selected_row)
-                return proposed_user
-            else:
-                print(
-                    f"{self.full_name()} is the only member of group {group.groupname}"
-                )
-                return None
+        if not group.has_member(self):
+            raise ValueError(
+                f"The member {self.full_name()} is not exist {group.groupname}"
+            )
+            return
+        if group.count_members() < 2:
+            raise ValueError("Thers's no enough members!")
+            return
 
-        else:
-            print(f"{self.full_name()} is not a member of group {group.groupname}")
-            return None
+        print(f"[Debbug] we start looking for your soulemate!")
+        proposed_user = None
+        if self.gender == "M":
+            proposed_user = self.get_random_female_user(group)
+            print(f"proposed_user 1: {vars(proposed_user)}")
+        elif self.gender == "F":
+            proposed_user = self.get_random_male_user(group)
+            print(f"proposed_user 2: {vars(proposed_user)}")
+
+        if proposed_user is None:
+            proposed_user = self.get_random_unknown_gender_user(group)
+            print(f"proposed_user 3: {vars(proposed_user)}")
+        return proposed_user
 
     @classmethod
     def get_by_username(cls, username):
@@ -166,3 +152,81 @@ class User(Model):
             user.load_object_from_row(row)
             return user
         return None
+
+    def get_random_female_user(self, group):
+        query = """
+            SELECT u.*
+                FROM users u
+            JOIN group_users gu ON u.id = gu.user_id
+                WHERE gu.group_id = ? 
+                AND u.id != ? 
+                AND u.gender = 'F' 
+                AND gu.is_participant = 'y';
+        """
+        cursor = self.db_manager.db.cursor()
+        print(
+            f"[get_random_male_user] Executing query: {query} with group_id={group.id} and user_id={self.id}"
+        )
+        cursor.execute(query, (group.id, self.id))
+        candidates = cursor.fetchall()
+        print(f"Number of condidates: {len(candidates)}")
+        cursor.close()
+        if not candidates:
+            return None
+        selected_row = random.choice(candidates)
+        proposed_user = User()
+        proposed_user.load_object_from_row(selected_row)
+
+        return proposed_user
+
+    def get_random_male_user(self, group):
+        query = """
+            SELECT u.*
+            FROM users u
+            JOIN group_users gu ON u.id = gu.user_id
+            WHERE gu.group_id = ? 
+                AND u.id != ? 
+                AND u.gender = 'M' 
+                AND gu.is_participant = 'y'
+        """
+        cursor = self.db_manager.db.cursor()
+        cursor.execute(query, (group.id, self.id))
+        candidates = cursor.fetchall()
+        cursor.close()
+        if not candidates:
+            return None
+        selected_row = random.choice(candidates)
+        proposed_user = User()
+        proposed_user.load_object_from_row(selected_row)
+        return proposed_user
+
+    def get_random_unknown_gender_user(self, group):
+        query = """
+            SELECT u.*
+            FROM users u
+            JOIN group_users gu ON u.id = gu.user_id
+            WHERE gu.group_id = ? 
+                AND u.id != ? 
+                AND u.gender IS NULL 
+                AND gu.is_participant = 'y'
+        """
+        cursor = self.db_manager.db.cursor()
+        cursor.execute(query, (group.id, self.id))
+        candidates = cursor.fetchall()
+        cursor.close()
+        print(f"Number of condidates: {len(candidates)}")
+        if not candidates:
+            return None
+        selected_row = random.choice(candidates)
+        proposed_user = User()
+        proposed_user.load_object_from_row(selected_row)
+
+        return proposed_user
+
+    def get_username(self):
+        if self.username == "" or self.username is None:
+            return f"t.me/id={self.id}"
+        else:
+            return f"@{self.username}"
+
+
