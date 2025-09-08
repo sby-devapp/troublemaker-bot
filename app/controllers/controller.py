@@ -75,3 +75,52 @@ class Controller:
             self.groupService.group = group
 
         return self.groupService.group
+    
+    async def user_info_verification(self, user: "User", update: Update):
+        """
+        Check if the user has set their gender and/or age.
+        If not, send a friendly reminder via private message.
+        """
+        try:
+            if not user.gender and not user.age:
+                text = (
+                    "🔍 <b>Complete Your Profile</b>\n\n"
+                    "You haven’t set your <b>gender</b> and <b>age</b> yet.\n"
+                    "This helps make the game more fun and personalized!\n\n"
+                    "👉 Update now: /profile"
+                )
+                await self.application.bot.send_message(
+                    chat_id=user.id,
+                    text=text,
+                    parse_mode="HTML"
+                )
+
+            elif not user.gender:
+                text = (
+                    "🔍 <b>Heads Up!</b>\n\n"
+                    "You haven’t set your <b>gender</b>.\n"
+                    "Don’t miss out on the fun — be part of the story!\n\n"
+                    "👉 Fix it in: /profile"
+                )
+                await self.application.bot.send_message(
+                    chat_id=user.id,
+                    text=text,
+                    parse_mode="HTML"
+                )
+
+            elif not user.age:
+                text = (
+                    "🔍 <b>Quick Reminder</b>\n\n"
+                    "Your <b>age</b> is still missing.\n"
+                    "It’s just for fun — and keeps things spicy! 😉\n\n"
+                    "👉 Set it in: /profile"
+                )
+                await self.application.bot.send_message(
+                    chat_id=user.id,
+                    text=text,
+                    parse_mode="HTML"
+                )
+
+        except Exception as e:
+            # Can't send PM (user hasn't started bot or blocked it)
+            print(f"[gender_verification] Failed to send message to user {user.id}: {e}")

@@ -128,6 +128,7 @@ class Group(Model):
         UPDATE group_users SET is_participant = '{anwser}'
         WHERE group_id =? AND user_id =?
         """
+        # print(f"Query: {query} ; group_id ={self.id}, user_id={user.id}")
         cursor = self.db_manager.db.cursor()
         cursor.execute(query, (self.id, user.id))
         cursor.close()

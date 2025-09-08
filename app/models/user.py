@@ -14,6 +14,7 @@ class User(Model):
         last_name=None,
         age=None,
         gender=None,
+        is_bot="N"
     ):
         super().__init__()
         self.id = id
@@ -22,6 +23,19 @@ class User(Model):
         self.last_name = last_name
         self.age = age
         self.gender = gender
+        self.is_bot = is_bot
+
+    def isBot(self)-> bool:
+        if self.is_bot == "Y":
+            return True
+        return False
+    
+    def set_is_bot(self, is_bot=False):
+        if is_bot == False:
+            self.is_bot = "N"
+        elif is_bot == True:
+            self.is_bot = "Y"
+
 
     def _insert(self):
         if self.id is None:
@@ -54,6 +68,10 @@ class User(Model):
             fields.append("age")
             placeholders.append("?")
             values.append(self.age)
+        if self.is_bot is not None:
+            fields.append("is_bot")
+            placeholders.append("?")
+            values.append(self.is_bot)
 
         query = f"""
         INSERT INTO {self.table_name} ({', '.join(fields)}) VALUES ({', '.join(placeholders)})
@@ -73,6 +91,9 @@ class User(Model):
         if self.age is not None:
             fields.append("age = ?")
             values.append(self.age)
+        if self.is_bot is not None:
+            fields.append("is_bot = ?")
+            values.append(self.is_bot)
 
         query = f"""
         UPDATE {self.table_name}
@@ -103,6 +124,7 @@ class User(Model):
         self.last_name = row["last_name"]
         self.age = row["age"]
         self.gender = row["gender"]
+        self.is_bot = row["is_bot"]
 
     def belong_to(self, group) -> bool:
         query = """
@@ -225,7 +247,7 @@ class User(Model):
 
     def get_username(self):
         if self.username == "" or self.username is None:
-            return f"t.me/id={self.id}"
+            return f"tg://id={self.id}"
         else:
             return f"@{self.username}"
 

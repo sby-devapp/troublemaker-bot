@@ -11,6 +11,7 @@ class UserService:
         user_db.username = user.username
         user_db.first_name = user.first_name
         user_db.last_name = user.last_name
+        user_db.set_is_bot(user.is_bot) # if the value is Trus will be "Y" if the value is False  will be "N"
         return user_db.save()
 
     def get_by_username(self, username: str) -> User:

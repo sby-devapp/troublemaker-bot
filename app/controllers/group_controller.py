@@ -1,5 +1,5 @@
 import asyncio
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, CommandHandler
 from app.controllers.controller import Controller
 from app.models.user import User
@@ -24,13 +24,26 @@ class GroupController(Controller):
         if not self.is_group(update, context):
             await update.message.reply_text("This command can only be used in a group chat.")
             return
+        
+        await self.user_info_verification(self.get_user(update, context), update)
 
         # Get target user
         if update.message.reply_to_message:
             user = update.message.reply_to_message.from_user
+        
         else:
             user = update.effective_user
-        user = self.userService.save(user)
+
+        target_user = self.userService.save(user)
+        if target_user.isBot():
+            await update.message.reply_text(
+                text=(
+                    "🤖 Ooh… Are you serious? You want to register a <b>bot</b> in the game?\n"
+                    "Try it with a human next time!"
+                ),
+                parse_mode="HTML"
+            )
+            return
 
         group = self.get_group(update, context)
         self.groupService.register(user)
@@ -87,6 +100,8 @@ class GroupController(Controller):
             return
 
         await self.force_participation(update, context)
+        await self.user_info_verification(self.get_user(update, context), update)
+
 
         target_user = None
         group = self.get_group(update, context)
@@ -114,7 +129,18 @@ class GroupController(Controller):
                     parse_mode="HTML"
                 )
                 return
-
+           
+        if target_user.isBot():
+            await update.message.reply_text(
+                text=(
+                    "🤖 I’d like to remind you: I’m a bot, not a human.\n"
+                    "Did your crush text you or something? Your mind’s clearly on vacation. 😂"
+                ),
+                parse_mode="HTML"
+            )
+            return
+        
+        
         if not self.groupService.has_member(target_user):
             await update.message.reply_text("❌ User is not registered in this group.")
             return
@@ -146,6 +172,8 @@ class GroupController(Controller):
             return
 
         await self.force_participation(update, context)
+        await self.user_info_verification(self.get_user(update, context), update)
+
 
         target_user = None
         group = self.get_group(update, context)
@@ -161,6 +189,16 @@ class GroupController(Controller):
             else:
                 target_user = update.effective_user
                 target_user = self.userService.save(target_user)
+        if target_user.isBot():
+            await update.message.reply_text(
+                text=(
+                    "🤖 ERROR 404: Romantic feelings not found.\n"
+                    "I run on electricity, not emotions, I'm a bot not human ⚡.\n"
+                    "Go touch grass — or go take your medicine — maybe the sun was too bright today. ☀️😅"
+                ),
+                parse_mode="HTML"
+            )
+            return
 
         if not target_user:
             await update.message.reply_text(
@@ -172,9 +210,14 @@ class GroupController(Controller):
         if not self.groupService.has_member(target_user):
             await update.message.reply_text("❌ User is not registered in this group.")
             return
+        
+        
 
         target_user, proposed_user, message = self.groupService.propose(target_user)
-        final_message = message
+        # add the usernames of the target_user and the proposed_user to tag them in the messaage
+        entities = ""
+        entities += f"{target_user.get_username()}, {proposed_user.get_username()}"
+        final_message = message+ "\n\n"+entities
 
         await update.message.reply_text(
             text=final_message,
@@ -191,6 +234,8 @@ class GroupController(Controller):
             return
 
         await self.force_participation(update, context)
+        await self.user_info_verification(self.get_user(update, context), update)
+
 
         target_user = None
         group = self.get_group(update, context)
@@ -213,6 +258,17 @@ class GroupController(Controller):
                 parse_mode="HTML"
             )
             return
+        
+        if target_user.isBot():
+            await update.message.reply_text(
+                text=(
+                    "🤖 Ooh… Are you serious? Do <b>bots</b> even have crushes ?\n"
+                    "Maybe <i>you</i> have a crush on me … 😏\n"
+                    "Try it with a human next time!"
+                ),
+                parse_mode="HTML"
+            )
+            return
 
         if not self.groupService.has_member(target_user):
             await update.message.reply_text("❌ User is not registered in this group.")
@@ -220,7 +276,7 @@ class GroupController(Controller):
 
         user, crush, message = self.groupService.crush(target_user)
         await context.bot.send_chat_action(update.effective_chat.id, "typing")
-        await asyncio.sleep(2)
+        await asyncio.sleep(5)
 
         await update.message.reply_text(
             text=message,
@@ -229,18 +285,45 @@ class GroupController(Controller):
         )
 
     async def force_participation(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Automatically enroll user in the game if not already participating."""
+        """
+        Automatically enroll the user in the game if not already participating.
+        Send a private message with a button to jump to the group.
+        """
+        # Get group and user
         this_group = self.get_group(update, context)
         this_user = self.get_user(update, context)
 
+        # Check if user is already a participant
         if not this_group.is_participant(this_user):
-            this_group.participate_to_game(this_user, "y")
+            # Enroll user in the game
+            this_group.participate_to_game(this_user, True)
+
+            # Create deep link to the group
+            # tid = Telegram ID (e.g., -1001234567890)
+            clean_group_id = str(this_group.id).replace("-100", "")
+            group_link = f"https://t.me/c/{clean_group_id}"
+
+            # Button to open the group
+            keyboard = [
+                [InlineKeyboardButton("💬 Jump to Group", url=group_link)]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            # Notification message
             message = (
-                f"🎮 <b>{this_user.full_name()}</b> has been automatically enrolled in the game "
-                f"in <b>{this_group.groupname}</b>!"
+                f"🎮 <b>You're In!</b>\n\n"
+                f"You’ve been automatically enrolled in the game in:\n"
+                f"🔹 <b>{this_group.groupname}</b>\n\n"
+                f"Get ready for fake proposals, spicy gossip, and crush alerts! 😈"
+                f"LINK: {group_link}"
             )
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=message,
-                parse_mode="HTML"
-            )
+
+            try:
+                await context.bot.send_message(
+                    chat_id=this_user.id,
+                    text=message,
+                    parse_mode="HTML",
+                    reply_markup=reply_markup
+                )
+            except Exception as e:
+                print(f"[force_participation] Could not send PM to user {this_user.id}: {e}")

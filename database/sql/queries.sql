@@ -52,7 +52,14 @@ JOIN group_users gu ON u.id = gu.user_id
     AND u.gender = NULL;
 
 
-SELECT u.*, gu.is_participant
-    FROM users
+
+SELECT u.*, g.groupname, gu.is_participant
+    FROM users u
 INNER JOIN group_users gu ON u.id=gu.user_id
-    WHERE u.id = 6038394083;
+INNER JOIN groups g ON g.id = gu.group_id
+    WHERE u.id = 6933133813;
+    
+select * from users;
+
+DELETE FROM users where id = 6933133813;
+DELETE FROM group_users where user_id = 6933133813;
