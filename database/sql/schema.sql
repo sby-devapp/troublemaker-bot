@@ -56,14 +56,16 @@ CREATE TABLE IF NOT EXISTS group_users (
 CREATE TABLE IF NOT EXISTS proposal_lines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     gender TEXT CHECK( gender IS NULL OR gender IN ('M', 'F', NULL) ),
-    content TEXT NOT NULL
+    content TEXT NOT NULL,
+    used INTEGER DEFAULT 0
 );
 
 -- Gossip messages: gender can be 'M', 'F', or NULL (for neutral/universal)
 CREATE TABLE IF NOT EXISTS gossip_lines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     gender TEXT CHECK( gender IS NULL OR gender IN ('M', 'F', NULL) ),
-    content TEXT NOT NULL
+    content TEXT NOT NULL,
+    used INTEGER DEFAULT 0
 );
 
 

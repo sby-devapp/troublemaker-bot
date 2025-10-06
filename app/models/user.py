@@ -148,19 +148,18 @@ class User(Model):
         if group.count_members() < 2:
             raise ValueError("Thers's no enough members!")
             return
-
-        print(f"[Debbug] we start looking for your soulemate!")
+        
         proposed_user = None
         if self.gender == "M":
             proposed_user = self.get_random_female_user(group)
-            print(f"proposed_user 1: {vars(proposed_user)}")
+            #print(f"proposed_user 1: {vars(proposed_user)}")
         elif self.gender == "F":
             proposed_user = self.get_random_male_user(group)
-            print(f"proposed_user 2: {vars(proposed_user)}")
+            #print(f"proposed_user 2: {vars(proposed_user)}")
 
         if proposed_user is None:
             proposed_user = self.get_random_unknown_gender_user(group)
-            print(f"proposed_user 3: {vars(proposed_user)}")
+            #print(f"proposed_user 3: {vars(proposed_user)}")
         return proposed_user
 
     @classmethod
@@ -186,12 +185,10 @@ class User(Model):
                 AND gu.is_participant = 'y';
         """
         cursor = self.db_manager.db.cursor()
-        print(
-            f"[get_random_male_user] Executing query: {query} with group_id={group.id} and user_id={self.id}"
-        )
+        
         cursor.execute(query, (group.id, self.id))
         candidates = cursor.fetchall()
-        print(f"Number of condidates: {len(candidates)}")
+       
         cursor.close()
         if not candidates:
             return None
