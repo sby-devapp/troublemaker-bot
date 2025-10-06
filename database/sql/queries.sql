@@ -63,3 +63,10 @@ select * from users;
 
 DELETE FROM users where id = 6933133813;
 DELETE FROM group_users where user_id = 6933133813;
+
+
+ALTER TAbLE gossip_lines ADD COLUMN used INTEGER  DEFAULT 0;
+
+SELECT * 
+FROM gossip_lines 
+order by DESC used;
