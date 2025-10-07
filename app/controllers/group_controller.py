@@ -154,11 +154,9 @@ class GroupController(Controller):
 
         # Generate gossip
         target_user, message = self.groupService.gossip(target_user)
-        username_ref = f"@{target_user.username}" if target_user.username else f"<a href='tg://user?id={target_user.id}'>{target_user.full_name()}</a>"
-        final_message = f"{message}\n\n👤 {username_ref}"
-
+        
         await update.message.reply_text(
-            text=final_message,
+            text=message,
             parse_mode="HTML",
             disable_web_page_preview=True
         )
@@ -214,13 +212,10 @@ class GroupController(Controller):
         
 
         target_user, proposed_user, message = self.groupService.propose(target_user)
-        # add the usernames of the target_user and the proposed_user to tag them in the messaage
-        entities = ""
-        entities += f"{target_user.get_username()}, {proposed_user.get_username()}"
-        final_message = message+ "\n\n"+entities
+        
 
         await update.message.reply_text(
-            text=final_message,
+            text=message,
             parse_mode="HTML",
             disable_web_page_preview=True
         )
@@ -274,9 +269,10 @@ class GroupController(Controller):
             await update.message.reply_text("❌ User is not registered in this group.")
             return
 
-        user, crush, message = self.groupService.crush(target_user)
+        target_user, crushuser, message = self.groupService.crush(target_user)
+
+        
         await context.bot.send_chat_action(update.effective_chat.id, "typing")
-        await asyncio.sleep(5)
 
         await update.message.reply_text(
             text=message,

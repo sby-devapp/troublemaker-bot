@@ -1,13 +1,14 @@
+DROP TABLE IF EXISTS gossip_lines;
 
 CREATE TABLE IF NOT EXISTS gossip_lines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    gender TEXT CHECK( gender IS NULL OR gender IN ('M', 'F', NULL) ),  -- NULL = universal
-    topic TEXT NOT NULL,  -- e.g., 'love', 'gym', 'annoyed', 'daily', 'fashion'
-    content TEXT NOT NULL, -- the message with {user}
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    used INTGER DEFAULT 0
+    id INTEGER PRIMARY KEY,
+    gender TEXT,
+    topic TEXT NOT NULL,
+    content TEXT NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
 
 
 DELETE FROM  gossip_lines;
@@ -83,7 +84,7 @@ INSERT INTO gossip_lines (gender, topic, content) VALUES
 ('F', 'cooking', 'I saw {user} argue with her rice cooker like it’s her ex. “Why won’t you listen to me?!” 😤'),
 ('F', 'cooking', 'Hehehe! {user} calls her burnt cookies “crispy soul snacks.” Okay, queen! 👑'),
 ('F', 'cooking', 'Eeh! {user} Googled “how to peel garlic” and watched a 20-minute tutorial… then used garlic powder. 🧄'),
-('F', 'cooking', 'Don’t tell anyone… but {user} thinks “sauté” means “throw it in and pray.” Shhh! 🙏')
+('F', 'cooking', 'Don’t tell anyone… but {user} thinks “sauté” means “throw it in and pray.” Shhh! 🙏');
 
 
 

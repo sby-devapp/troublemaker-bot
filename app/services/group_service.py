@@ -1,8 +1,10 @@
 from app.models import group
+from app.models.crush_lines import CrushLine
 from app.models.gossip_lines import GossipLine
 from app.models.proposal_line import ProposalLines
 from app.models.group import Group
 from app.models.user import User
+from utils.html_parse import format_mention_html
 
 
 class GroupService:
@@ -38,37 +40,48 @@ class GroupService:
         self.group.add_member(user)
         return user
 
-    def propose(self, user: User) -> tuple[User, User, str]:
+    def propose(self, targetuser: User) -> tuple[User, User, str]:
         if not self.group:
             raise ValueError("Group not found")
-        pu = self.linked_user(user)
-        proposal_line = ProposalLines.get_random_proposal_line(user)
+        proposal_user = self.linked_user(targetuser)
+        proposal_line = ProposalLines.get_random_proposal_line(targetuser)
         if not proposal_line:
             raise ValueError("No proposal line found for the user")
         message = proposal_line.content.replace(
-            "{user1}", f"[{user.full_name()}]"
-        ).replace("{user2}", f"[{pu.full_name()}]")
-        return user, pu, message
+            "{user1}", f"<b>{format_mention_html(targetuser)}</b>"
+        ).replace("{user2}", f"<b>{format_mention_html(proposal_user)}</b>")
+        return targetuser, proposal_user, message
 
-    def gossip(self, user: User) -> tuple[User, str]:
+    def gossip(self, targetuser: User) -> tuple[User, str]:
         if not self.group:
             raise ValueError("Group not found")
-        gossip_line = GossipLine.get_random_gossip_line(user)
+        gossip_line = GossipLine.get_random_gossip_line(targetuser)
         if not gossip_line:
             raise ValueError("No proposal line found for the user")
-        message = gossip_line.content.replace("{user}", f"[{user.full_name()}]")
-        return user, message
+        message = gossip_line.content.replace("{user}", f"<b>{format_mention_html(targetuser)}</b>")
+        return targetuser, message
 
-    def crush(self, user: User) -> tuple[User, User, str]:
+    def crush(self, targetuser: User) -> tuple[User, User, str]:
         """Generate a random crush message for the user."""
-        if not self.has_member(user):
-            raise ValueError(f"User {user.full_name()} is not a member of the group.")
-        proposed_user = self.group.propose_to(user)
-        if proposed_user:
-            message = f"{user.full_name()} has a crush on {proposed_user.full_name()}!"
-            return user, proposed_user, message
+        if not self.has_member(targetuser):
+            raise ValueError(f"User {targetuser.full_name()} is not a member of the group.")
+        crush_user = self.group.propose_to(targetuser)
+        if crush_user:
+
+            crush_line = CrushLine.get_random_crush_line(targetuser)
+            if not crush_line:
+                raise ValueError("No crush line found for the user")
+            else:
+                
+                crush_line_content = crush_line.content.replace(
+                    "{targetuser}", f"<b>{format_mention_html(targetuser)}</b>"
+                ).replace("{crushuser}", f"<b>{format_mention_html(crush_user)}</b>")
+                if crush_line.topic.lower() == "annoyed":
+                   crush_user = None
+                print("message: "+crush_line_content)
+            return targetuser, crush_user, crush_line_content
         else:
-            return user, user, "No crush found for you in this group."
+            return targetuser, targetuser, "No crush found for you in this group."
 
     def participate_to_game(self, user: User, key: bool) -> User:
         """Participate/logout to the game in the group."""

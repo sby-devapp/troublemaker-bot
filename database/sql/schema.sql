@@ -68,5 +68,14 @@ CREATE TABLE IF NOT EXISTS gossip_lines (
     used INTEGER DEFAULT 0
 );
 
+CREATE TABLE crush_lines (
+    id INTEGER PRIMARY KEY,
+    gender TEXT,          -- 'M', 'F', or NULL
+    topic TEXT NOT NULL,
+    content TEXT NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 
