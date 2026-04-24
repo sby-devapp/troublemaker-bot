@@ -244,8 +244,34 @@ class User(Model):
 
     def get_username(self):
         if self.username == "" or self.username is None:
-            return f"tg://id={self.id}"
+            return f"<a href='tg://user?id={self.id}'>{self.full_name()}</a>"
         else:
             return f"@{self.username}"
+    
+    @classmethod
+    def get_group_participants(cls, group_id):
+        """Get all participating users in a group."""
+        query = """
+            SELECT u.*
+            FROM users u
+            JOIN group_users gu ON u.id = gu.user_id
+            WHERE gu.group_id = ? 
+                AND gu.is_participant = 'y'
+                AND u.is_bot = 'N'
+            ORDER BY RANDOM()
+            LIMIT 10
+        """
+        cursor = cls.db_manager.db.cursor()
+        cursor.execute(query, (group_id,))
+        rows = cursor.fetchall()
+        cursor.close()
+        
+        users = []
+        for row in rows:
+            user = cls()
+            user.load_object_from_row(row)
+            users.append(user)
+        
+        return users
 
 
