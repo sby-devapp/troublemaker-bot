@@ -46,13 +46,13 @@ class GroupController(Controller):
             return
 
         group = self.get_group(update, context)
-        self.groupService.register(user)
+        self.groupService.register(target_user)
 
         message = (
-            f"<b>{user.full_name()}</b> has been registered in the game in this group.\n"
+            f"<b>{target_user.full_name()}</b> has been registered in the game in this group.\n"
             f"Use <code>/profile</code> to set your age and gender for a better experience."
         )
-        if not user.gender:
+        if not target_user.gender:
             message += "\n\n🔔 <i>Tip: Set your gender in /profile to unlock more features!</i>"
 
         await update.message.reply_text(message, parse_mode="HTML")
