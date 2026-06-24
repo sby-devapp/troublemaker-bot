@@ -4,13 +4,14 @@ from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler, filters, BaseHandler
 from app.controllers.controller import Controller
+from app.models.bot_intervention import BotIntervention
+from app.models.silence_breaker import SilenceBreaker
 
 
 class ListenerController(Controller):
     def __init__(self, application):
         super().__init__(application)
-        self.message_count = {}  # Track message count per group
-        self.trigger_threshold = 3  # Default threshold
+        self.groups = {}  # { group_id: { 'count': 0, 'threshold': N } }
         self.last_message_time = {}  # Track last message time per group
         self.last_message_from_bot = {}  # Track if last message was from bot
         self.silence_duration = 300  # 5 minutes in seconds
@@ -44,18 +45,22 @@ class ListenerController(Controller):
         # Update silence tracking
         self.update_silence_tracking(group_id, is_bot_message, context)
         
-        # Initialize counter for this group
-        if group_id not in self.message_count:
-            self.message_count[group_id] = 0
+        # Initialize per-group tracking
+        if group_id not in self.groups:
+            self.groups[group_id] = {
+                'count': 0,
+                'threshold': random.randint(3, 7)
+            }
 
-        self.message_count[group_id] += 1
-        current_count = self.message_count[group_id]
+        self.groups[group_id]['count'] += 1
+        current_count = self.groups[group_id]['count']
+        current_threshold = self.groups[group_id]['threshold']
         
         # Log message in one line
-        print(f"[{update.effective_chat.title}] {sender}: {msg_text[:50]:<50} | Count: {current_count}/{self.trigger_threshold}")
+        print(f"[{update.effective_chat.title}] {sender}: {msg_text[:50]:<50} | Count: {current_count}/{current_threshold}")
         
         # Check if we should trigger an event
-        if current_count >= self.trigger_threshold:
+        if current_count >= current_threshold:
             try:
                 await self.random_intervention(update, context)
                 print(f"✅ Intervention sent in '{update.effective_chat.title}'")
@@ -63,59 +68,30 @@ class ListenerController(Controller):
                 print(f"❌ Error: {e}")
             
             self.reset_counter(group_id)
-            print(f"🔄 Counter reset. New threshold: {self.trigger_threshold}\n")
+            print(f"🔄 Counter reset for '{update.effective_chat.title}'. New threshold: {self.groups[group_id]['threshold']}\n")
         
         # Don't return anything to allow other handlers to process this message
 
     async def random_intervention(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Randomly pick an intervention type."""
-        interventions = [
-            self.send_reaction,
-            self.send_observation,
-            self.send_tease
-        ]
+        """Randomly pick an intervention type and get from database."""
+        intervention_types = ['reaction', 'observation', 'tease']
         
-        # Randomly pick an intervention
-        intervention = random.choice(interventions)
-        await intervention(update, context)
-
-    async def send_reaction(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Send a random reaction."""
-        reactions = ["😂", "👀", "🍿", "💀", "🤔", "👁️‍🗨️", "🌶️"]
-        reaction = random.choice(reactions)
-        await update.message.reply_text(reaction)
-
-    async def send_observation(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Send a random observation."""
-        observations = [
-            "This group is getting spicy! 🌶️",
-            "Interesting conversation... 👀",
-            "*grabs popcorn* 🍿",
-            "Y'all are wild 😂",
-            "The drama never stops here! 💀",
-            "Someone's about to spill tea ☕",
-            "This escalated quickly 📈"
-        ]
-        observation = random.choice(observations)
-        await update.message.reply_text(observation)
-
-    async def send_tease(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Send a light tease."""
-        teases = [
-            "Someone's been very quiet today... 👀",
-            "I see what's happening here 😏",
-            "The group detective is watching 🕵️",
-            "Hmm, suspicious activity detected 🤨",
-            "Y'all think I'm not paying attention? 😂"
-        ]
-        tease = random.choice(teases)
-        await update.message.reply_text(tease)
-
+        # Randomly pick an intervention type
+        intervention_type = random.choice(intervention_types)
+        
+        # Get random intervention from database
+        intervention = BotIntervention.get_random_by_type(intervention_type)
+        
+        if intervention:
+            await update.message.reply_text(intervention.content)
+        else:
+            # Fallback if no data in database
+            await update.message.reply_text("👀")
 
     def reset_counter(self, group_id):
-        """Reset message counter and set new random threshold."""
-        self.message_count[group_id] = 0
-        self.trigger_threshold = random.randint(3, 7)
+        """Reset message counter and set new random threshold per group."""
+        self.groups[group_id]['count'] = 0
+        self.groups[group_id]['threshold'] = random.randint(3, 7)
     
     def update_silence_tracking(self, group_id, is_bot_message, context):
         """Update silence tracking for the group."""
@@ -148,38 +124,28 @@ class ListenerController(Controller):
             pass
     
     async def send_silence_breaker(self, group_id, context):
-        """Send a message to break the silence."""
+        """Send a message to break the silence using database."""
         try:
             # Get random users from the group to mention
             from app.models.user import User
             group_users = User.get_group_participants(group_id)
             
-            silence_messages = [
-                "Hmm! This group is silent... 🤫",
-                "Is this group dead? 💀",
-                "Ooh guys, where are you? 👻",
-                "*cricket sounds* 🦗",
-                "Hello? Anyone there? 📢",
-                "Did everyone fall asleep? 😴",
-                "The silence is deafening! 🔇"
-            ]
-            
-            mention_messages = [
-                "Ooh {user}, long time no see! 👋",
-                "Hey {user}, where have you been? 🤔",
-                "{user}, come join the conversation! 💬",
-                "Missing you in the chat, {user}! 😢",
-                "{user}, say something! The group is too quiet 🗣️",
-                "Wake up {user}! Time to chat! ⏰"
-            ]
-            
+            # 50% chance to mention someone if users available
             if group_users and len(group_users) > 0 and random.choice([True, False]):
-                # 50% chance to mention someone
-                random_user = random.choice(group_users)
-                message = random.choice(mention_messages).format(user=random_user.get_username())
+                # Get mention-type silence breaker
+                breaker = SilenceBreaker.get_random_by_type('mention')
+                if breaker:
+                    random_user = random.choice(group_users)
+                    message = breaker.content.format(user=random_user.get_username())
+                else:
+                    message = "Hey, wake up! 👋"
             else:
-                # General silence message
-                message = random.choice(silence_messages)
+                # Get general silence breaker
+                breaker = SilenceBreaker.get_random_by_type('general')
+                if breaker:
+                    message = breaker.content
+                else:
+                    message = "This group is too quiet! 🤫"
             
             await context.bot.send_message(
                 chat_id=group_id,
